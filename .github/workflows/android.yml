@@ -1,0 +1,67 @@
+name: android
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    env:
+      VMAJOR: 137
+      VERSION: 137.0.7141.3
+      BRANCH: android-latest-release
+      SRCDIR: aosp-src
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Reclaiming disk space on / by disabling swap partition
+        run: |
+          sudo swapoff -av
+          sudo rm -f /swapfile
+
+      - name: Remove not needed items
+        run: |
+          sudo rm -rf /usr/local/.ghcup \
+            /usr/share/dotnet \
+            /usr/share/swift \
+            /usr/local/share/powershell \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /imagegeneration \
+            "$AGENT_TOOLSDIRECTORY"
+          sudo docker image prune --all --force
+          sudo docker builder prune -a
+
+      - name: Setup src dir
+        run: |
+          sudo apt autoremove --purge firefox snapd
+          sudo apt-mark hold snapd
+          sudo apt-get update && sudo apt-get upgrade
+          sudo apt-get install git-core gnupg flex bison build-essential zip curl zlib1g-dev libc6-dev-i386 x11proto-core-dev \
+            libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig
+          export REPO=$(mktemp /tmp/repo.XXXXXXXXX)
+          curl -o ${REPO} https://storage.googleapis.com/git-repo-downloads/repo
+          gpg --recv-keys 8BB9AD793E8E6153AF0F9A4416530D5E920F5C65
+          curl -s https://storage.googleapis.com/git-repo-downloads/repo.asc | gpg --verify - ${REPO} && sudo install -m 755 ${REPO} /usr/bin/repo
+          mkdir -p $SRCDIR && cd $SRCDIR
+          repo init --partial-clone --no-use-superproject -b $BRANCH -u https://android.googlesource.com/platform/manifest
+          repo sync -c -j4
+          source build/envsetup.sh
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/aosp.tar.zst ./aosp-src
+
+      - name: Upload aosp src
+        uses: actions/upload-artifact@v6
+        with:
+          name: aosp-src-${{ env.VERSION }}
+          path: /home/runner/work/gollum/gollum/chromium-src/aosp.tar.zst

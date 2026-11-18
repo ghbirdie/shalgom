@@ -1,0 +1,53 @@
+# This is a basic workflow to help you get started with Actions
+
+name: git
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 134.0.6998.39
+      SRCDIR: chromium-src
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Reclaiming disk space on / by disabling swap partition
+        run: |
+          sudo swapoff -av
+          sudo rm -f /swapfile
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Remove not needed items
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /imagegeneration
+          sudo docker image prune --all --force
+          sudo docker builder prune -a
+
+      - name: Clone source and du -sh
+        shell: bash
+        run: |
+          mkdir -p $SRCDIR && cd $SRCDIR
+          echo "PATH: $PATH"
+          echo "Clone chromium" 
+          git clone https://chromium.googlesource.com/chromium/src
+          du -sh src
+          ls -lsh src/.git/objects/pack
+          

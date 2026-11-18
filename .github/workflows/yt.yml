@@ -1,0 +1,64 @@
+name: yt
+
+on:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 2025.04.30
+      CHANNEL: AlternativeCutsStudios
+      SRCDIR: yt-data
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Reclaiming disk space on / by disabling swap partition
+        run: |
+          sudo swapoff -av
+          sudo rm -f /swapfile
+
+      - name: Remove not needed items
+        run: |
+          sudo rm -rf /usr/local/.ghcup \
+            /usr/share/dotnet \
+            /usr/share/swift \
+            /usr/local/share/powershell \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /imagegeneration \
+            "$AGENT_TOOLSDIRECTORY"
+          sudo docker image prune --all --force
+          sudo docker builder prune -a
+          sudo apt autoremove --purge firefox snapd
+          sudo apt-mark hold snapd
+
+      - name: Setup src dir
+        shell: bash
+        continue-on-error: true
+        run: |
+          mkdir -p $SRCDIR && cd $SRCDIR
+          wget -O yt-dlp https://github.com/yt-dlp/yt-dlp/releases/download/$VERSION/yt-dlp_linux
+          chmod +x yt-dlp
+          ./yt-dlp --write-info-json --write-thumbnail --skip-download https://www.youtube.com/@${{ env.CHANNEL }}/videos
+
+      - name: Setup src dir
+        shell: bash
+        run: |
+          cd $SRCDIR
+          cd ..
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/yt.tar.zst ./yt-data
+
+      - name: Upload YT data
+        uses: actions/upload-artifact@v6
+        with:
+          name: yt-data-${{ env.CHANNEL }}
+          path: /home/runner/work/gollum/gollum/yt.tar.zst

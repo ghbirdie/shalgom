@@ -1,0 +1,610 @@
+name: dev-partbuild-windows
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      VMAJOR: 137
+      VERSION: 137.0.7151.15
+      SRCDIR: chromium-src
+      DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+      MSYS: winsymlinks:native
+    steps:
+      - name: Setup src dir
+        run: |
+          mkdir -p ${{ env.SRCDIR }} && cd ${{ env.SRCDIR }}
+          curl.exe -o .gclient https://raw.githubusercontent.com/COD3HUNT3R/gollum/refs/heads/main/.gclient-win
+          ls
+
+      - name: Clone depot_tools
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}
+          cat .gclient
+          git config --global depot-tools.allowGlobalGitConfig true
+          echo "Cloning depot_tools..."
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
+
+      - name: Adding depot_tools to path
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: echo "::add-path::$env:GITHUB_WORKSPACE/chromium-src/depot_tools"
+
+      - name: Clone source and do gclient sync
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}
+          echo "PATH: $PATH"
+          echo "gclient sync chromium-$VERSION..." 
+          gclient sync --no-history --nohooks
+          du -sh ../${{ env.SRCDIR }}
+          gclient runhooks
+          src/build/util/lastchange.py -o src/build/util/LASTCHANGE
+          src/build/util/lastchange.py -m GPU_LISTS_VERSION --revision-id-only --header src/gpu/config/gpu_lists_version.h
+          src/build/util/lastchange.py -m SKIA_COMMIT_HASH -s src/third_party/skia --header src/skia/ext/skia_commit_hash.h
+          src/build/util/lastchange.py -s src/third_party/dawn --revision src/gpu/webgpu/DAWN_VERSION
+          cd src && rm -rf .git
+          cd .. && du -sh ../${{ env.SRCDIR }}
+          curl -o export_tarball.py https://raw.githubusercontent.com/COD3HUNT3R/gollum/refs/heads/main/export_tarball.py
+          chmod +x export_tarball.py
+          ./export_tarball.py --version --xz --remove-nonessential-files chromium-$VERSION --progress --src-dir src/
+          ls -lsh
+          pwd
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-src-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src\*.tar.xz
+
+      - name: Generate patches
+        shell: bash
+        continue-on-error: true
+        run: |
+          cd ${{ env.SRCDIR }}
+          mv *.tar.xz .. && cd ..
+          rm -rf ${{ env.SRCDIR }}
+          ls -lsh && pwd
+          tar -xf chromium-$VERSION.tar.xz
+          mv chromium-$VERSION a
+          tar -xf chromium-$VERSION.tar.xz
+          mv chromium-$VERSION b
+          rm -f chromium-$VERSION.tar.xz
+          cd b
+          find . -type f -a \( -name "*.grd" -o -name "*.grdp" -o -name "*.xtb" \) -a -exec sed -i -e "s/Chromium/Baraqah/g" {} +
+          find . -type f -a \( -name "*.grd" -o -name "*.grdp" -o -name "*.xtb" \) -a -exec sed -i -e "s/Chrome/Baraqah/g" {} +
+          find . -type f -a \( -name "*.grd" -o -name "*.grdp" -o -name "*.xtb" \) -a -exec sed -i -e "s/Google/Baraqah/g" {} +
+          find . -type f -a \( -name "*.cc" \) -a -exec sed -i -e "s/support.google.com/support.baraqah.org/g" {} +
+          cd ..
+          ls -lsh && pwd
+          diff -urN a b > baraqah$VMAJOR-$VERSION-branding.patch
+          ls -lsh && pwd
+
+      - name: Upload windows patch
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-patch-${{ env.VERSION }}
+          path: ${{ github.workspace }}\*.patch
+
+  build1:
+    needs: windows
+    runs-on: windows-latest
+    env:
+      VMAJOR: 137
+      VERSION: 137.0.7151.15
+      SRCDIR: chromium-src
+      DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+      MSYS: winsymlinks:native
+    steps:
+      - name: Download source tarball
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-src-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - name: Download versioned branding patches
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-patch-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/desktop'
+          path: 'chromium-src/desktop'
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/patches'
+          path: 'chromium-src/patches'
+          token: ${{ secrets.PAT }}
+
+      - name: Clone depot_tools
+        shell: bash
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          cd ${{ env.SRCDIR }}
+          git config --global depot-tools.allowGlobalGitConfig true
+          echo "Clone depot_tools..."
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
+          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+
+      - name: Extract tar
+        shell: bash
+        continue-on-error: true
+        run: |
+          cd ${{ env.SRCDIR }} && ls -lsh
+          tar -xf chromium-$VERSION.tar.xz
+          ls -lsh
+          rm -f chromium-$VERSION.tar.xz
+          cd chromium-$VERSION
+          patch -p1 < ../baraqah$VMAJOR-$VERSION-branding.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-root-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-banned-tld.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-baraqah-dns.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-notrash-component-extension.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-baraqah-safe-browsing.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-browser-feedback.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-extensions-manifestv2.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-opera-addons-extension-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/windows/baraqah$VMAJOR-windows-install-directory-constants.patch
+          cp -rf ../desktop/baraqah/chrome .
+          cp -rf ../desktop/baraqah/components .
+          cp -rf ../desktop/baraqah/ui .
+          pwd && ls -lsh chrome/app/theme/chromium
+          mkdir -p out/release && cd out/release
+          curl.exe -o args.gn https://raw.githubusercontent.com/COD3HUNT3R/gollum/refs/heads/main/windows-args.gn
+          sed -i "s/%api-key%/${{ secrets.GOOGLE_API_KEY }}/g" args.gn
+          sed -i "s/%client-id%/${{ secrets.GOOGLE_CLIENT_ID }}/g" args.gn
+          sed -i "s/%client-secret%/${{ secrets.GOOGLE_CLIENT_SECRET }}/g" args.gn
+          cd ../.. && pwd && ls -lsh
+          gn gen out/release
+
+      - name: Build base
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-$VERSION
+          ninja -j 4 -C out/release base
+
+      - name: Build content/public/common
+        shell: bash
+        continue-on-error: true
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-$VERSION
+          timeout 5h ninja -j 4 -C out/release content/public/common
+
+      - name: Compress artifacts
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-$VERSION
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+
+      - name: Upload out directory
+        uses: actions/upload-artifact@v6
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src\out.tar.zst
+
+  build2:
+      needs: build1
+      runs-on: windows-latest
+      env:
+        VMAJOR: 137
+        VERSION: 137.0.7151.15
+        SRCDIR: chromium-src
+        DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+        MSYS: winsymlinks:native
+      steps:
+      - name: Download source tarball
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-src-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - name: Download out directory
+        uses: actions/download-artifact@v7
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - name: Download versioned branding patches
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-patch-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/desktop'
+          path: 'chromium-src/desktop'
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/patches'
+          path: 'chromium-src/patches'
+          token: ${{ secrets.PAT }}
+
+      - name: Clone depot_tools
+        shell: bash
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          cd ${{ env.SRCDIR }}
+          git config --global depot-tools.allowGlobalGitConfig true
+          echo "Clone depot_tools..."
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
+          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+
+      - name: Extract tar
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }} && ls
+          tar -xf chromium-$VERSION.tar.xz
+          tar -xf out.tar.zst
+          ls -lsh
+          rm -f chromium-$VERSION.tar.xz out.tar.zst
+          mv out chromium-$VERSION && cd chromium-$VERSION
+          patch -p1 < ../baraqah$VMAJOR-$VERSION-branding.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-root-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-banned-tld.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-baraqah-dns.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-notrash-component-extension.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-baraqah-safe-browsing.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-browser-feedback.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-extensions-manifestv2.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-opera-addons-extension-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/windows/baraqah$VMAJOR-windows-install-directory-constants.patch
+          cp -rf ../desktop/baraqah/chrome .
+          cp -rf ../desktop/baraqah/components .
+          cp -rf ../desktop/baraqah/ui .
+          pwd && ls -lsh chrome/app/theme/chromium
+
+      - name: Build content/public/browser
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release content/public/browser
+
+      - name: Build chrome/gpu
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release chrome/gpu
+
+      - name: Build chrome/common
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release chrome/common
+
+      - name: Compress artifacts
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-$VERSION
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+
+      - name: Upload out directory
+        uses: actions/upload-artifact@v6
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src\out.tar.zst
+          overwrite: true
+
+  build3:
+      needs: build2
+      runs-on: windows-latest
+      env:
+        VMAJOR: 137
+        VERSION: 137.0.7151.15
+        SRCDIR: chromium-src
+        DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+        MSYS: winsymlinks:native
+      steps:
+      - name: Download source tarball
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-src-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - name: Download out directory
+        uses: actions/download-artifact@v7
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - name: Download versioned branding patches
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-patch-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/desktop'
+          path: 'chromium-src/desktop'
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/patches'
+          path: 'chromium-src/patches'
+          token: ${{ secrets.PAT }}
+
+      - name: Clone depot_tools
+        shell: bash
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          cd ${{ env.SRCDIR }}
+          git config --global depot-tools.allowGlobalGitConfig true
+          echo "Clone depot_tools..."
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
+          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+
+      - name: Extract tar
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }} && ls
+          tar -xf chromium-$VERSION.tar.xz
+          tar -xf out.tar.zst
+          ls -lsh
+          rm -f chromium-$VERSION.tar.xz out.tar.zst
+          mv out chromium-$VERSION && cd chromium-$VERSION
+          patch -p1 < ../baraqah$VMAJOR-$VERSION-branding.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-root-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-banned-tld.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-baraqah-dns.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-notrash-component-extension.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-baraqah-safe-browsing.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-browser-feedback.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-extensions-manifestv2.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-opera-addons-extension-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/windows/baraqah$VMAJOR-windows-install-directory-constants.patch
+          cp -rf ../desktop/baraqah/chrome .
+          cp -rf ../desktop/baraqah/components .
+          cp -rf ../desktop/baraqah/ui .
+          pwd && ls -lsh chrome/app/theme/chromium
+
+      - name: Build chrome/browser/ui
+        shell: bash
+        continue-on-error: true
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          timeout 5h ninja -j 4 -C out/release chrome/browser/ui
+
+      - name: Compress artifacts
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-$VERSION
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+
+      - name: Upload out directory
+        uses: actions/upload-artifact@v6
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src\out.tar.zst
+          overwrite: true
+
+  build4:
+      needs: build3
+      runs-on: windows-latest
+      env:
+        VMAJOR: 137
+        VERSION: 137.0.7151.15
+        SRCDIR: chromium-src
+        DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+        MSYS: winsymlinks:native
+      steps:
+      - name: Download source tarball
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-src-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - name: Download out directory
+        uses: actions/download-artifact@v7
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - name: Download versioned branding patches
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-patch-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/desktop'
+          path: 'chromium-src/desktop'
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/patches'
+          path: 'chromium-src/patches'
+          token: ${{ secrets.PAT }}
+
+      - name: Clone depot_tools
+        shell: bash
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          cd ${{ env.SRCDIR }}
+          git config --global depot-tools.allowGlobalGitConfig true
+          echo "Clone depot_tools..."
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
+          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+
+      - name: Extract tar
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }} && ls
+          tar -xf chromium-$VERSION.tar.xz
+          tar -xf out.tar.zst
+          ls -lsh
+          rm -f chromium-$VERSION.tar.xz out.tar.zst
+          mv out chromium-$VERSION && cd chromium-$VERSION
+          patch -p1 < ../baraqah$VMAJOR-$VERSION-branding.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-root-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-banned-tld.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-baraqah-dns.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-notrash-component-extension.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-baraqah-safe-browsing.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-browser-feedback.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-extensions-manifestv2.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-opera-addons-extension-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/windows/baraqah$VMAJOR-windows-install-directory-constants.patch
+          cp -rf ../desktop/baraqah/chrome .
+          cp -rf ../desktop/baraqah/components .
+          cp -rf ../desktop/baraqah/ui .
+          pwd && ls -lsh chrome/app/theme/chromium
+
+      - name: Build chrome/browser/ui
+        shell: bash
+        continue-on-error: true
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          timeout 5h ninja -j 4 -C out/release chrome/browser/ui
+
+      - name: Compress artifacts
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-$VERSION
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+
+      - name: Upload out directory
+        uses: actions/upload-artifact@v6
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src\out.tar.zst
+          overwrite: true
+
+  build5:
+      needs: build4
+      runs-on: windows-latest
+      env:
+        VMAJOR: 137
+        VERSION: 137.0.7151.15
+        SRCDIR: chromium-src
+        DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+        MSYS: winsymlinks:native
+      steps:
+      - name: Download source tarball
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-src-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - name: Download out directory
+        uses: actions/download-artifact@v7
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - name: Download versioned branding patches
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-patch-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/desktop'
+          path: 'chromium-src/desktop'
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/patches'
+          path: 'chromium-src/patches'
+          token: ${{ secrets.PAT }}
+
+      - name: Clone depot_tools
+        shell: bash
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          cd ${{ env.SRCDIR }}
+          git config --global depot-tools.allowGlobalGitConfig true
+          echo "Clone depot_tools..."
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
+          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+
+      - name: Extract tar
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }} && ls
+          tar -xf chromium-$VERSION.tar.xz
+          tar -xf out.tar.zst
+          ls -lsh
+          rm -f chromium-$VERSION.tar.xz out.tar.zst
+          mv out chromium-$VERSION && cd chromium-$VERSION
+          patch -p1 < ../baraqah$VMAJOR-$VERSION-branding.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-root-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-banned-tld.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-baraqah-dns.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-notrash-component-extension.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-baraqah-safe-browsing.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-browser-feedback.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-extensions-manifestv2.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-opera-addons-extension-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/windows/baraqah$VMAJOR-windows-install-directory-constants.patch
+          cp -rf ../desktop/baraqah/chrome .
+          cp -rf ../desktop/baraqah/components .
+          cp -rf ../desktop/baraqah/ui .
+          pwd && ls -lsh chrome/app/theme/chromium
+
+      - name: Build chrome/browser
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release chrome/browser
+
+      - name: Build chrome
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release chrome
+
+      - name: Build chromedriver
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release chromedriver
+
+      - name: Build installer & mini_installer
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release installer
+          ninja -j 4 -C out/release mini_installer
+          ls out/release
+
+      - name: Upload windows packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: packages-windows-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src\chromium-${{ env.VERSION }}\out\release\*.exe
+
+      - name: Compress artifacts
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-$VERSION
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+
+      - name: Upload out directory
+        uses: actions/upload-artifact@v6
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src\out.tar.zst
+          overwrite: true

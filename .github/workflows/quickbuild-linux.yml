@@ -1,0 +1,184 @@
+name: quickbuild-linux
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # for quickly testing patches over any previous partbuild
+  quicklinux:
+      runs-on: ubuntu-latest
+      env:
+        VMAJOR: 145
+        VERSION: 145.0.7632.159
+        SRCDIR: chromium-src
+      steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Reclaiming disk space on / by disabling swap partition
+        run: |
+          sudo swapoff -av
+          sudo rm -f /swapfile
+
+      - name: Remove not needed items
+        run: |
+          sudo rm -rf /usr/local/.ghcup \
+            /usr/share/dotnet \
+            /usr/share/swift \
+            /usr/local/share/powershell \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /imagegeneration \
+            "$AGENT_TOOLSDIRECTORY"
+          sudo docker image prune --all --force
+          sudo docker builder prune -a
+
+      - name: Download source tarball
+        uses: actions/download-artifact@v7
+        with:
+          name: linux-src-${{ env.VERSION }}
+          path: /home/runner/work/gollum/gollum/chromium-src
+          github-token: ${{ secrets.PAT }}
+          run-id: 23471801955
+
+      - name: Download out directory
+        uses: actions/download-artifact@v7
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: /home/runner/work/gollum/gollum/chromium-src
+          github-token: ${{ secrets.PAT }}
+          run-id: 23471801955
+
+      - name: Download versioned branding patches
+        uses: actions/download-artifact@v7
+        with:
+          name: linux-patch-${{ env.VERSION }}
+          path: /home/runner/work/gollum/gollum/chromium-src
+          github-token: ${{ secrets.PAT }}
+          run-id: 23471803389
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/desktop'
+          path: 'chromium-src/desktop'
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/extensions'
+          path: 'chromium-src/extensions'
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/patches'
+          path: 'chromium-src/patches'
+          token: ${{ secrets.PAT }}
+
+      - name: Clone depot_tools
+        shell: bash
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          cd $SRCDIR
+          echo "Clone depot_tools..."
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
+          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+          sudo apt install -y ninja-build gperf devscripts
+
+      - name: Extract tar
+        shell: bash
+        run: |
+          cd $SRCDIR && ls -lsh
+          tar -xf chromium-$VERSION.tar.zst
+          tar -xf out.tar.zst
+          ls -lsh
+          rm -f chromium-$VERSION.tar.zst out.tar.zst
+          mv out chromium-$VERSION && cd chromium-$VERSION
+          patch -p1 < ../baraqah$VMAJOR-$VERSION-branding.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-component-update-url.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-time-server.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-domain-reliability.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-root-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-banned-tld.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-baraqah-dns.patch
+          #patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-baraqah-search-engine.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-notrash-component-extension.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-gaia-to-baia.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-baraqah-safe-browsing.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-browser-feedback.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-extensions-manifestv2.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-opera-addons-extension-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-pin-extension-beside-omnibar.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-porda-ai-extension-and-kingdom-doh-server.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/linux/baraqah$VMAJOR-linux-keyring.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/linux/baraqah$VMAJOR-linux-installer.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/linux/baraqah$VMAJOR-linux-config-dir-location.patch
+          cp -rf ../desktop/baraqah/chrome .
+          cp -rf ../desktop/baraqah/components .
+          cp -rf ../desktop/baraqah/ui .
+          cp -rf ../extensions/baraqah/chrome .
+          pwd && ls -lsh chrome/app/theme/chromium
+          ls -lsh ui/webui/resources/images
+          sudo build/install-build-deps.sh
+          pwd && ls -lsh
+
+      - name: Build chrome
+        shell: bash
+        run: |
+          cd $SRCDIR/chromium-$VERSION
+          ninja -j 4 -C out/release chrome
+
+      - name: Build chrome_sandbox
+        shell: bash
+        run: |
+          cd $SRCDIR/chromium-$VERSION
+          ninja -j 4 -C out/release chrome_sandbox
+
+      - name: Build chromedriver
+        shell: bash
+        run: |
+          cd $SRCDIR/chromium-$VERSION
+          ninja -j 4 -C out/release chromedriver
+
+      - name: Build installer
+        shell: bash
+        run: |
+          cd $SRCDIR/chromium-$VERSION
+          ninja -j 4 -C out/release installer
+          ls -lsh out/release
+
+      - name: Upload DEB packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: packages-linux-baraqah-deb-${{ env.VERSION }}
+          path: /home/runner/work/gollum/gollum/chromium-src/chromium-${{ env.VERSION }}/out/release/*.deb
+
+      - name: Upload RPM packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: packages-linux-baraqah-rpm-${{ env.VERSION }}
+          path: /home/runner/work/gollum/gollum/chromium-src/chromium-${{ env.VERSION }}/out/release/*.rpm
+
+      - name: Compress artifacts
+        shell: bash
+        run: |
+          cd $SRCDIR/chromium-$VERSION
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/chromium-src/out.tar.zst ./out
+
+      - name: Upload out directory
+        uses: actions/upload-artifact@v6
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: /home/runner/work/gollum/gollum/chromium-src/out.tar.zst
+          overwrite: true

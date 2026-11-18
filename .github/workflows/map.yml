@@ -1,0 +1,77 @@
+name: map
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    env:
+      DATE: 251118
+      SRCDIR: map-src
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Reclaiming disk space on / by disabling swap partition
+        run: |
+          sudo swapoff -av
+          sudo rm -f /swapfile
+
+      - name: Remove not needed items
+        run: |
+          sudo rm -rf /usr/local/.ghcup \
+            /usr/share/dotnet \
+            /usr/share/swift \
+            /usr/local/share/powershell \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /imagegeneration \
+            "$AGENT_TOOLSDIRECTORY"
+          sudo docker image prune --all --force
+          sudo docker builder prune -a
+
+      - name: Configure environment
+        run: |
+          sudo apt-get install -y tilemaker tippecanoe wget lua liblua-dev
+          mkdir -p $SRCDIR/bin/{osm.pbf,mbtiles,all} && cd $SRCDIR
+          wget https://github.com/COD3HUNT3R/gollum/releases/download/v1/config.zip
+          wget https://github.com/COD3HUNT3R/gollum/releases/download/v1/process.zip
+          unzip config.zip
+          unzip process.zip
+
+      - name: Adding bin dir to path
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: echo "::add-path::$GITHUB_WORKSPACE/map-src/bin"
+
+      - name: Download maps and convert to mbtiles
+        shell: bash
+        run: |
+          cd $SRCDIR
+          for country in bangladesh bhutan india myanmar nepal pakistan sri-lanka; do
+            wget -c https://download.geofabrik.de/asia/$country-$DATE.osm.pbf -P osm.pbf/
+            tilemaker --input=osm.pbf/$country-$DATE.osm.pbf --output=mbtiles/$country-$DATE.mbtiles --config=config/config-openmaptiles.json --process=process/process-openmaptiles.lua
+          done
+      
+      - name: Merge mbtiles
+        shell: bash
+        run: |
+          cd $SRCDIR
+          tile-join -o all/all.mbtiles mbtiles/*.mbtiles
+
+      - name: Upload mbtiles map
+        uses: actions/upload-artifact@v6
+        with:
+          name: maps-${{ env.DATE }}
+          path: /home/runner/work/gollum/gollum/maps-src/all/*.mbtiles

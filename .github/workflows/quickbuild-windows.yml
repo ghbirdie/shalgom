@@ -1,0 +1,142 @@
+name: quickbuild-windows
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # for quickly testing patches over any previous partbuild
+  quickwindows:
+      runs-on: windows-latest
+      env:
+        VMAJOR: 147
+        VERSION: 147.0.7727.138
+        SRCDIR: chromium-src
+        DEPOT_TOOLS_WIN_TOOLCHAIN: 0
+        MSYS: winsymlinks:native
+      steps:
+      - name: Download source tarball
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-src-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+          github-token: ${{ secrets.PAT }}
+          run-id: 17085258892
+
+      - name: Download out directory
+        uses: actions/download-artifact@v7
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+          github-token: ${{ secrets.PAT }}
+          run-id: 17085258892
+
+      - name: Download versioned branding patches
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-patch-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src
+          github-token: ${{ secrets.PAT }}
+          run-id: 17085258892
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/desktop'
+          path: 'chromium-src/desktop'
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/extensions'
+          path: 'chromium-src/extensions'
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v5
+        with:
+          repository: 'COD3HUNT3R/patches'
+          path: 'chromium-src/patches'
+          token: ${{ secrets.PAT }}
+
+      - name: Clone depot_tools
+        shell: bash
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: |
+          cd ${{ env.SRCDIR }}
+          git config --global depot-tools.allowGlobalGitConfig true
+          echo "Clone depot_tools..."
+          git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
+          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+
+      - name: Extract tar
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }} && ls
+          tar -xf chromium-$VERSION.tar.xz
+          tar -xf out.tar.zst
+          ls -lsh
+          rm -f chromium-$VERSION.tar.xz out.tar.zst
+          mv out chromium-$VERSION && cd chromium-$VERSION
+          patch -p1 < ../baraqah$VMAJOR-$VERSION-branding.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-component-update-url.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-time-server.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-domain-reliability.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-root-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-banned-tld.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-baraqah-dns.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-notrash-component-extension.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/common/baraqah$VMAJOR-gaia-to-baia.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-baraqah-safe-browsing.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-browser-feedback.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-extensions-manifestv2.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-opera-addons-extension-store.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-pin-extension-beside-omnibar.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/desktop/baraqah$VMAJOR-porda-ai-extension-and-kingdom-doh-server.patch
+          patch -p1 < ../patches/baraqah/$VMAJOR/windows/baraqah$VMAJOR-windows-install-directory-constants.patch
+          #patch -p1 < ../patches/baraqah/$VMAJOR/windows/baraqah$VMAJOR-windows-updater.patch
+          cp -rf ../desktop/baraqah/chrome .
+          cp -rf ../desktop/baraqah/components .
+          cp -rf ../desktop/baraqah/ui .
+          cp -rf ../extensions/baraqah/chrome .
+          pwd && ls -lsh chrome/app/theme/chromium
+
+      - name: Build chrome
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release chrome
+
+      - name: Build chromedriver
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release chromedriver
+
+      - name: Build installer & mini_installer
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-${{ env.VERSION }}
+          ninja -j 4 -C out/release installer
+          ninja -j 4 -C out/release mini_installer
+          ls out/release
+
+      - name: Upload windows packages
+        uses: actions/upload-artifact@v6
+        with:
+          name: packages-baraqah-windows-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src\chromium-${{ env.VERSION }}\out\release\*.exe
+
+      - name: Compress artifacts
+        shell: bash
+        run: |
+          cd ${{ env.SRCDIR }}/chromium-$VERSION
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+
+      - name: Upload out directory
+        uses: actions/upload-artifact@v6
+        with:
+          name: chromium-out-${{ env.VERSION }}
+          path: ${{ github.workspace }}\chromium-src\out.tar.zst
+          overwrite: true
