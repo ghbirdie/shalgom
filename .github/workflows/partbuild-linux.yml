@@ -178,19 +178,19 @@ jobs:
         with:
           repository: 'ghbirdie/desktop'
           path: 'chromium-src/desktop'
-          token: ${{ secrets.PAT }}
+          token: ${{ github.token }}
 
       - uses: actions/checkout@v5
         with:
           repository: 'ghbirdie/extensions'
           path: 'chromium-src/extensions'
-          token: ${{ secrets.PAT }}
+          token: ${{ github.token }}
 
       - uses: actions/checkout@v5
         with:
           repository: 'ghbirdie/patches'
           path: 'chromium-src/patches'
-          token: ${{ secrets.PAT }}
+          token: ${{ github.token }}
 
       - name: Clone depot_tools
         shell: bash
