@@ -47,7 +47,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: linux-src-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
           github-token: ${{ secrets.PAT }}
           run-id: 23471801955
 
@@ -55,7 +55,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
           github-token: ${{ secrets.PAT }}
           run-id: 23471801955
 
@@ -63,25 +63,25 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: linux-patch-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
           github-token: ${{ secrets.PAT }}
           run-id: 23471803389
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/desktop'
+          repository: 'ghbirdie/desktop'
           path: 'chromium-src/desktop'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/extensions'
+          repository: 'ghbirdie/extensions'
           path: 'chromium-src/extensions'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/patches'
+          repository: 'ghbirdie/patches'
           path: 'chromium-src/patches'
           token: ${{ secrets.PAT }}
 
@@ -162,23 +162,23 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: packages-linux-baraqah-deb-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/chromium-${{ env.VERSION }}/out/release/*.deb
+          path: /home/runner/work/shalgom/shalgom/chromium-src/chromium-${{ env.VERSION }}/out/release/*.deb
 
       - name: Upload RPM packages
         uses: actions/upload-artifact@v6
         with:
           name: packages-linux-baraqah-rpm-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/chromium-${{ env.VERSION }}/out/release/*.rpm
+          path: /home/runner/work/shalgom/shalgom/chromium-src/chromium-${{ env.VERSION }}/out/release/*.rpm
 
       - name: Compress artifacts
         shell: bash
         run: |
           cd $SRCDIR/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/out.tar.zst
+          path: /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst
           overwrite: true

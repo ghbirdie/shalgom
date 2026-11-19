@@ -58,10 +58,10 @@ jobs:
           repo init --partial-clone --no-use-superproject -b $BRANCH -u https://android.googlesource.com/platform/manifest
           repo sync -c -j4
           source build/envsetup.sh
-          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/aosp.tar.zst ./aosp-src
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/shalgom/shalgom/aosp.tar.zst ./aosp-src
 
       - name: Upload aosp src
         uses: actions/upload-artifact@v6
         with:
           name: aosp-src-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/aosp.tar.zst
+          path: /home/runner/work/shalgom/shalgom/chromium-src/aosp.tar.zst

@@ -45,8 +45,8 @@ jobs:
         run: |
           sudo apt-get install -y tilemaker tippecanoe wget lua liblua-dev
           mkdir -p $SRCDIR/bin/{osm.pbf,mbtiles,all} && cd $SRCDIR
-          wget https://github.com/COD3HUNT3R/gollum/releases/download/v1/config.zip
-          wget https://github.com/COD3HUNT3R/gollum/releases/download/v1/process.zip
+          wget https://github.com/ghbirdie/shalgom/releases/download/v1/config.zip
+          wget https://github.com/ghbirdie/shalgom/releases/download/v1/process.zip
           unzip config.zip
           unzip process.zip
 
@@ -74,4 +74,4 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: maps-${{ env.DATE }}
-          path: /home/runner/work/gollum/gollum/maps-src/all/*.mbtiles
+          path: /home/runner/work/shalgom/shalgom/maps-src/all/*.mbtiles

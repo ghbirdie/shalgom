@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           cd ${{ env.SRCDIR }}/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/omaha-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/shalgom/shalgom/omaha-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6

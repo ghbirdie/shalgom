@@ -19,7 +19,7 @@ jobs:
       - name: Setup src dir
         run: |
           mkdir -p ${{ env.SRCDIR }} && cd ${{ env.SRCDIR }}
-          curl.exe -o .gclient https://raw.githubusercontent.com/COD3HUNT3R/gollum/refs/heads/main/.gclient-win
+          curl.exe -o .gclient https://raw.githubusercontent.com/ghbirdie/shalgom/refs/heads/main/.gclient-win
           ls
 
       - name: Clone depot_tools
@@ -51,7 +51,7 @@ jobs:
           src/build/util/lastchange.py -s src/third_party/dawn --revision src/gpu/webgpu/DAWN_VERSION
           cd src && rm -rf .git
           cd .. && du -sh ../${{ env.SRCDIR }}
-          curl -o export_tarball.py https://raw.githubusercontent.com/COD3HUNT3R/gollum/refs/heads/main/export_tarball.py
+          curl -o export_tarball.py https://raw.githubusercontent.com/ghbirdie/shalgom/refs/heads/main/export_tarball.py
           chmod +x export_tarball.py
           ./export_tarball.py --version --xz --remove-nonessential-files chromium-$VERSION --progress --src-dir src/
           ls -lsh
@@ -115,19 +115,19 @@ jobs:
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/desktop'
+          repository: 'ghbirdie/desktop'
           path: 'chromium-src/desktop'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/extensions'
+          repository: 'ghbirdie/extensions'
           path: 'chromium-src/extensions'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/patches'
+          repository: 'ghbirdie/patches'
           path: 'chromium-src/patches'
           token: ${{ secrets.PAT }}
 
@@ -173,7 +173,7 @@ jobs:
           cp -rf ../extensions/baraqah/chrome .
           pwd && ls -lsh chrome/app/theme/chromium
           mkdir -p out/release && cd out/release
-          curl.exe -o args.gn https://raw.githubusercontent.com/COD3HUNT3R/gollum/refs/heads/main/windows-args.gn
+          curl.exe -o args.gn https://raw.githubusercontent.com/ghbirdie/shalgom/refs/heads/main/windows-args.gn
           sed -i "s/%api-key%/${{ secrets.GOOGLE_API_KEY }}/g" args.gn
           sed -i "s/%client-id%/${{ secrets.GOOGLE_CLIENT_ID }}/g" args.gn
           sed -i "s/%client-secret%/${{ secrets.GOOGLE_CLIENT_SECRET }}/g" args.gn
@@ -197,7 +197,7 @@ jobs:
         shell: bash
         run: |
           cd ${{ env.SRCDIR }}/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
@@ -235,19 +235,19 @@ jobs:
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/desktop'
+          repository: 'ghbirdie/desktop'
           path: 'chromium-src/desktop'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/extensions'
+          repository: 'ghbirdie/extensions'
           path: 'chromium-src/extensions'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/patches'
+          repository: 'ghbirdie/patches'
           path: 'chromium-src/patches'
           token: ${{ secrets.PAT }}
 
@@ -315,7 +315,7 @@ jobs:
         shell: bash
         run: |
           cd ${{ env.SRCDIR }}/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
@@ -354,19 +354,19 @@ jobs:
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/desktop'
+          repository: 'ghbirdie/desktop'
           path: 'chromium-src/desktop'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/extensions'
+          repository: 'ghbirdie/extensions'
           path: 'chromium-src/extensions'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/patches'
+          repository: 'ghbirdie/patches'
           path: 'chromium-src/patches'
           token: ${{ secrets.PAT }}
 
@@ -423,7 +423,7 @@ jobs:
         shell: bash
         run: |
           cd ${{ env.SRCDIR }}/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
@@ -462,19 +462,19 @@ jobs:
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/desktop'
+          repository: 'ghbirdie/desktop'
           path: 'chromium-src/desktop'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/extensions'
+          repository: 'ghbirdie/extensions'
           path: 'chromium-src/extensions'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/patches'
+          repository: 'ghbirdie/patches'
           path: 'chromium-src/patches'
           token: ${{ secrets.PAT }}
 
@@ -531,7 +531,7 @@ jobs:
         shell: bash
         run: |
           cd ${{ env.SRCDIR }}/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
@@ -570,19 +570,19 @@ jobs:
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/desktop'
+          repository: 'ghbirdie/desktop'
           path: 'chromium-src/desktop'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/extensions'
+          repository: 'ghbirdie/extensions'
           path: 'chromium-src/extensions'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/patches'
+          repository: 'ghbirdie/patches'
           path: 'chromium-src/patches'
           token: ${{ secrets.PAT }}
 
@@ -664,7 +664,7 @@ jobs:
         shell: bash
         run: |
           cd ${{ env.SRCDIR }}/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6

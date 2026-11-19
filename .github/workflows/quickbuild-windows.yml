@@ -43,19 +43,19 @@ jobs:
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/desktop'
+          repository: 'ghbirdie/desktop'
           path: 'chromium-src/desktop'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/extensions'
+          repository: 'ghbirdie/extensions'
           path: 'chromium-src/extensions'
           token: ${{ secrets.PAT }}
 
       - uses: actions/checkout@v5
         with:
-          repository: 'COD3HUNT3R/patches'
+          repository: 'ghbirdie/patches'
           path: 'chromium-src/patches'
           token: ${{ secrets.PAT }}
 
@@ -132,7 +132,7 @@ jobs:
         shell: bash
         run: |
           cd ${{ env.SRCDIR }}/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd --force-local -cvpf D:/a/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6

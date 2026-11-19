@@ -55,10 +55,10 @@ jobs:
         run: |
           cd $SRCDIR
           cd ..
-          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/yt.tar.zst ./yt-data
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/shalgom/shalgom/yt.tar.zst ./yt-data
 
       - name: Upload YT data
         uses: actions/upload-artifact@v6
         with:
           name: yt-data-${{ env.CHANNEL }}
-          path: /home/runner/work/gollum/gollum/yt.tar.zst
+          path: /home/runner/work/shalgom/shalgom/yt.tar.zst

@@ -88,7 +88,7 @@ jobs:
           src/build/util/lastchange.py -s src/third_party/dawn --revision src/gpu/webgpu/DAWN_VERSION
           cd src && rm -rf .git
           cd .. && du -sh ../$SRCDIR
-          wget https://raw.githubusercontent.com/COD3HUNT3R/gollum/refs/heads/main/export_tarball.py
+          wget https://raw.githubusercontent.com/ghbirdie/shalgom/refs/heads/main/export_tarball.py
           chmod +x export_tarball.py
           ./export_tarball.py --version --xz --remove-nonessential-files chromium-$VERSION --progress --src-dir src/
           ls -lsh
@@ -98,7 +98,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: android-src-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/*.tar.xz
+          path: /home/runner/work/shalgom/shalgom/chromium-src/*.tar.xz
 
   build1:
     needs: android
@@ -140,7 +140,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: android-src-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Clone depot_tools
         shell: bash
@@ -164,13 +164,13 @@ jobs:
           pwd && ls -lsh
           sudo build/install-build-deps.sh
           mkdir -p out/release && cd out/release
-          wget -O args.gn https://raw.githubusercontent.com/COD3HUNT3R/gollum/refs/heads/main/android-args.gn
+          wget -O args.gn https://raw.githubusercontent.com/ghbirdie/shalgom/refs/heads/main/android-args.gn
           sed -i "s/%android-package%/org.chromium.chrome/g" args.gn
           sed -i "s/%api-key%/${{ secrets.GOOGLE_API_KEY }}/g" args.gn
           sed -i "s/%client-id%/${{ secrets.GOOGLE_CLIENT_ID }}/g" args.gn
           sed -i "s/%client-secret%/${{ secrets.GOOGLE_CLIENT_SECRET }}/g" args.gn
           cd ../.. && pwd && ls -lsh
-          /home/runner/work/gollum/gollum/chromium-src/depot_tools/gn.py gen out/release
+          /home/runner/work/shalgom/shalgom/chromium-src/depot_tools/gn.py gen out/release
 
       - name: Build content/public/browser
         shell: bash
@@ -183,13 +183,13 @@ jobs:
         shell: bash
         run: |
           cd $SRCDIR/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/out.tar.zst
+          path: /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst
 
   build2:
       needs: build1
@@ -231,13 +231,13 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: android-src-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Download out directory
         uses: actions/download-artifact@v7
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Clone depot_tools
         shell: bash
@@ -290,13 +290,13 @@ jobs:
         shell: bash
         run: |
           cd $SRCDIR/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/out.tar.zst
+          path: /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst
           overwrite: true
 
   build3:
@@ -339,13 +339,13 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: android-src-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Download out directory
         uses: actions/download-artifact@v7
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Clone depot_tools
         shell: bash
@@ -386,13 +386,13 @@ jobs:
         shell: bash
         run: |
           cd $SRCDIR/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/out.tar.zst
+          path: /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst
           overwrite: true
 
   build4:
@@ -435,13 +435,13 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: android-src-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Download out directory
         uses: actions/download-artifact@v7
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Clone depot_tools
         shell: bash
@@ -476,13 +476,13 @@ jobs:
         shell: bash
         run: |
           cd $SRCDIR/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/out.tar.zst
+          path: /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst
           overwrite: true
 
   build5:
@@ -525,13 +525,13 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: android-src-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Download out directory
         uses: actions/download-artifact@v7
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Clone depot_tools
         shell: bash
@@ -566,13 +566,13 @@ jobs:
         shell: bash
         run: |
           cd $SRCDIR/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/out.tar.zst
+          path: /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst
           overwrite: true
 
   build6:
@@ -615,13 +615,13 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: android-src-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Download out directory
         uses: actions/download-artifact@v7
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src
+          path: /home/runner/work/shalgom/shalgom/chromium-src
 
       - name: Clone depot_tools
         shell: bash
@@ -656,17 +656,17 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: apks-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/chromium-${{ env.VERSION }}/out/release/apks
+          path: /home/runner/work/shalgom/shalgom/chromium-src/chromium-${{ env.VERSION }}/out/release/apks
 
       - name: Compress artifacts
         shell: bash
         run: |
           cd $SRCDIR/chromium-$VERSION
-          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/gollum/gollum/chromium-src/out.tar.zst ./out
+          ZSTD_CLEVEL=12 tar -I zstd -cvpf /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst ./out
 
       - name: Upload out directory
         uses: actions/upload-artifact@v6
         with:
           name: chromium-out-${{ env.VERSION }}
-          path: /home/runner/work/gollum/gollum/chromium-src/out.tar.zst
+          path: /home/runner/work/shalgom/shalgom/chromium-src/out.tar.zst
           overwrite: true

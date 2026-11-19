@@ -10,18 +10,18 @@ on:
 jobs:
   check:
     # do not run in forks
-    if: github.repository == 'COD3HUNT3R/gollum'
+    if: github.repository == 'ghbirdie/shalgom'
     runs-on: ubuntu-latest
     steps:
       - name: Set maintainer groups
         id: maintainers
         run: |
-          echo "all=@COD3HUNT3R" >> $GITHUB_OUTPUT
-          echo "linux=@COD3HUNT3R" >> $GITHUB_OUTPUT
-          echo "freebsd=@COD3HUNT3R" >> $GITHUB_OUTPUT
-          echo "windows=@COD3HUNT3R" >> $GITHUB_OUTPUT
-          echo "macos=@COD3HUNT3R" >> $GITHUB_OUTPUT
-          echo "android=@COD3HUNT3R" >> $GITHUB_OUTPUT
+          echo "all=@ghbirdie" >> $GITHUB_OUTPUT
+          echo "linux=@ghbirdie" >> $GITHUB_OUTPUT
+          echo "freebsd=@ghbirdie" >> $GITHUB_OUTPUT
+          echo "windows=@ghbirdie" >> $GITHUB_OUTPUT
+          echo "macos=@ghbirdie" >> $GITHUB_OUTPUT
+          echo "android=@ghbirdie" >> $GITHUB_OUTPUT
 
       - name: Get the latest Chromium version
         id: latest-version
