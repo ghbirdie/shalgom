@@ -10,8 +10,8 @@ jobs:
   android:
     runs-on: ubuntu-latest
     env:
-      VMAJOR: 143
-      VERSION: 143.0.7499.192
+      VMAJOR: 157
+      VERSION: 157.0.8103.78
       SRCDIR: chromium-src
     steps:
       - name: Maximize build space
@@ -104,8 +104,8 @@ jobs:
     needs: android
     runs-on: ubuntu-latest
     env:
-      VMAJOR: 143
-      VERSION: 143.0.7499.192
+      VMAJOR: 157
+      VERSION: 157.0.8103.78
       SRCDIR: chromium-src
     steps:
       - name: Maximize build space
@@ -195,8 +195,8 @@ jobs:
       needs: build1
       runs-on: ubuntu-latest
       env:
-        VMAJOR: 143
-        VERSION: 143.0.7499.192
+        VMAJOR: 157
+        VERSION: 157.0.8103.78
         SRCDIR: chromium-src
       steps:
       - name: Maximize build space
@@ -303,8 +303,8 @@ jobs:
       needs: build2
       runs-on: ubuntu-latest
       env:
-        VMAJOR: 143
-        VERSION: 143.0.7499.192
+        VMAJOR: 157
+        VERSION: 157.0.8103.78
         SRCDIR: chromium-src
       steps:
       - name: Maximize build space
@@ -399,8 +399,8 @@ jobs:
       needs: build3
       runs-on: ubuntu-latest
       env:
-        VMAJOR: 143
-        VERSION: 143.0.7499.192
+        VMAJOR: 157
+        VERSION: 157.0.8103.78
         SRCDIR: chromium-src
       steps:
       - name: Maximize build space
@@ -489,8 +489,8 @@ jobs:
       needs: build4
       runs-on: ubuntu-latest
       env:
-        VMAJOR: 143
-        VERSION: 143.0.7499.192
+        VMAJOR: 157
+        VERSION: 157.0.8103.78
         SRCDIR: chromium-src
       steps:
       - name: Maximize build space
@@ -579,8 +579,8 @@ jobs:
       needs: build5
       runs-on: ubuntu-latest
       env:
-        VMAJOR: 143
-        VERSION: 143.0.7499.192
+        VMAJOR: 157
+        VERSION: 157.0.8103.78
         SRCDIR: chromium-src
       steps:
       - name: Maximize build space
