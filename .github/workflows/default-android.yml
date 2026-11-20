@@ -8,7 +8,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       VMAJOR: 157
       VERSION: 157.0.8103.78
@@ -102,7 +102,7 @@ jobs:
 
   build1:
     needs: android
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       VMAJOR: 157
       VERSION: 157.0.8103.78
@@ -193,7 +193,7 @@ jobs:
 
   build2:
       needs: build1
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-24.04
       env:
         VMAJOR: 157
         VERSION: 157.0.8103.78
