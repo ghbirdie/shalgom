@@ -248,6 +248,7 @@ jobs:
           echo "Clone depot_tools..."
           git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
           echo "$GITHUB_WORKSPACE/chromium-src/depot_tools" >> $GITHUB_PATH
+          export PATH="$GITHUB_WORKSPACE/chromium-src/depot_tools:$PATH"
           echo "PATH: $PATH"
           sudo apt install -y ninja-build gperf
 
