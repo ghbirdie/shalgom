@@ -71,7 +71,10 @@ jobs:
       - name: Adding depot_tools to path
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-        run: echo "$GITHUB_WORKSPACE/chromium-src/depot_tools" >> $GITHUB_PATH
+        run: |
+            echo "$GITHUB_WORKSPACE/chromium-src/depot_tools" >> $GITHUB_PATH
+            export PATH="$GITHUB_WORKSPACE/chromium-src/depot_tools:$PATH"
+            echo "PATH: $PATH"
 
       - name: Clone source and do gclient sync
         shell: bash
