@@ -157,6 +157,8 @@ jobs:
           export PATH="$GITHUB_WORKSPACE/chromium-src/depot_tools:$PATH"
           echo "PATH: $PATH"
           sudo apt install -y ninja-build gperf
+          cd $GITHUB_WORKSPACE/chromium-src/depot_tools
+          ./ensure_bootstrap
 
       - name: Extract tar
         shell: bash
@@ -256,6 +258,8 @@ jobs:
           export PATH="$GITHUB_WORKSPACE/chromium-src/depot_tools:$PATH"
           echo "PATH: $PATH"
           sudo apt install -y ninja-build gperf
+          cd $GITHUB_WORKSPACE/chromium-src/depot_tools
+          ./ensure_bootstrap
 
       - name: Extract tar
         shell: bash
