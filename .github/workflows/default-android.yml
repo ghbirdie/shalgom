@@ -366,8 +366,12 @@ jobs:
           cd $SRCDIR
           echo "Clone depot_tools..."
           git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
-          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+          echo "$GITHUB_WORKSPACE/chromium-src/depot_tools" >> $GITHUB_PATH
+          export PATH="$GITHUB_WORKSPACE/chromium-src/depot_tools:$PATH"
+          echo "PATH: $PATH"
           sudo apt install -y ninja-build gperf
+          cd $GITHUB_WORKSPACE/chromium-src/depot_tools
+          ./ensure_bootstrap
 
       - name: Extract tar
         shell: bash
@@ -462,8 +466,12 @@ jobs:
           cd $SRCDIR
           echo "Clone depot_tools..."
           git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
-          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+          echo "$GITHUB_WORKSPACE/chromium-src/depot_tools" >> $GITHUB_PATH
+          export PATH="$GITHUB_WORKSPACE/chromium-src/depot_tools:$PATH"
+          echo "PATH: $PATH"
           sudo apt install -y ninja-build gperf
+          cd $GITHUB_WORKSPACE/chromium-src/depot_tools
+          ./ensure_bootstrap
 
       - name: Extract tar
         shell: bash
@@ -552,8 +560,12 @@ jobs:
           cd $SRCDIR
           echo "Clone depot_tools..."
           git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
-          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+          echo "$GITHUB_WORKSPACE/chromium-src/depot_tools" >> $GITHUB_PATH
+          export PATH="$GITHUB_WORKSPACE/chromium-src/depot_tools:$PATH"
+          echo "PATH: $PATH"
           sudo apt install -y ninja-build gperf
+          cd $GITHUB_WORKSPACE/chromium-src/depot_tools
+          ./ensure_bootstrap
 
       - name: Extract tar
         shell: bash
@@ -642,8 +654,12 @@ jobs:
           cd $SRCDIR
           echo "Clone depot_tools..."
           git clone --depth=1 https://chromium.googlesource.com/chromium/tools/depot_tools
-          echo "::add-path::$GITHUB_WORKSPACE/chromium-src/depot_tools"
+          echo "$GITHUB_WORKSPACE/chromium-src/depot_tools" >> $GITHUB_PATH
+          export PATH="$GITHUB_WORKSPACE/chromium-src/depot_tools:$PATH"
+          echo "PATH: $PATH"
           sudo apt install -y ninja-build gperf
+          cd $GITHUB_WORKSPACE/chromium-src/depot_tools
+          ./ensure_bootstrap
 
       - name: Extract tar
         shell: bash
