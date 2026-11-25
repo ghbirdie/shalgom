@@ -384,12 +384,6 @@ jobs:
           mv out chromium-$VERSION && cd chromium-$VERSION
           pwd && ls -lsh
 
-      - name: Build chrome/browser/ui
-        shell: bash
-        run: |
-          cd $SRCDIR/chromium-$VERSION
-          ninja -j 4 -C out/release chrome/browser/ui
-
       - name: Build content/public/common
         shell: bash
         continue-on-error: true
