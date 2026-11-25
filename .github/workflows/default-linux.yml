@@ -382,12 +382,12 @@ jobs:
           sudo build/install-build-deps.sh
           pwd && ls -lsh
 
-      - name: Build chrome/browser/ui
+      - name: Build chrome/browser
         shell: bash
         continue-on-error: true
         run: |
           cd $SRCDIR/chromium-$VERSION
-          timeout 5h ninja -j 4 -C out/release chrome/browser/ui
+          timeout 5h ninja -j 4 -C out/release chrome/browser
 
       - name: Compress artifacts
         shell: bash
@@ -477,13 +477,6 @@ jobs:
           pwd && ls -lsh
           sudo build/install-build-deps.sh
           pwd && ls -lsh
-
-      - name: Build chrome/browser/ui
-        shell: bash
-        continue-on-error: true
-        run: |
-          cd $SRCDIR/chromium-$VERSION
-          timeout 5h ninja -j 4 -C out/release chrome/browser/ui
 
       - name: Build chrome/browser
         shell: bash
